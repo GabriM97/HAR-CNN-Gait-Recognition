@@ -9,33 +9,13 @@ from keras.utils import to_categorical
 from keras.models import load_model
 from keras.models import Sequential
 from keras import optimizers
-random_seed = 456
-np.random.seed(random_seed)
-
-def saveModel(model, filename):
-    try:
-        model.save(filename)
-        print("Model saved.")
-        return 0
-    except Exception as e:
-        print("Error saving the model:", e)
-        return -1
-
-def importModel(filename):
-    try:
-        model = load_model(filename)
-        print("Model loaded.")
-        return model
-    except Exception as e:
-        print("Error loading the model:", e)
-        return -1
 
 # defining a window function for segmentation purposes
 def windows(data,size):
     start = 0
     while start < data.count():
         yield int(start), int(start + size)
-        start += size   # (size/2) for double dataset
+        start += (size/2)   # (size/2) for double dataset
 
 def segment_signal(data, window_size = 24):
     segments = np.empty((0,window_size,3))
@@ -75,10 +55,11 @@ def cnnModel(numFilters, kernelSize, numOfRows, numOfColumns, poolingWindowSz, d
 
     adam = optimizers.Adam(lr=0.001, decay=1e-6)
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
-
     return model
 
 # # # #   MAIN   # # # #
+random_seed = 456
+np.random.seed(random_seed)
 
 dataset = loadLocalDataset("dataset.csv")
 dataset["x-axis"] = featureNormalize(dataset["x-axis"])
@@ -102,7 +83,7 @@ numNueronsFCL1 = 128
 numNueronsFCL2 = 128
 
 trainSplitRatio = 0.8 # split ratio for test and validation
-Epochs = 25
+Epochs = 30
 batchSize = 10
 numClasses = labels.shape[1] # number of total clases
 dropOutRatio = 0.2 # dropout ratio for dropout layer
@@ -128,12 +109,11 @@ model.summary()
 print("Start training ...\n")
 model.fit(trainX,trainY, validation_split=1-trainSplitRatio, epochs=Epochs, batch_size=batchSize, verbose=2)
 
-print("\nStart evaluating ...")
-score = model.evaluate(testX, testY, verbose=1)
-print(model.metrics_names)
-print("\nAccuracy:", score[0])
-print('Baseline Error: %.2f%%' %(100-score[1]*100))
+#print("\nStart evaluating ...")
+#score = model.evaluate(testX, testY, verbose=1)
+#print("\nLoss:", score[0], "\nAccuracy:", score[1])
+#print('Baseline Error: %.2f%%' %(100-score[1]*100))
 
-#model.save('model.h5')
-#np.save('groundTruth.npy',testY)
-#np.save('testData.npy',testX)
+model.save('model.h5')
+np.save('testData.npy', testX)
+np.save('groundTruth.npy', testY)
